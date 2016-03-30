@@ -97,7 +97,7 @@ def iterate_minibatches(inputs, targets, batchsize, shuffle=False):
         yield inputs[excerpt], targets[excerpt]
 
 
-def run_sgd_momentum(model='mlp', BN=False, num_epochs=50, alpha=0.1, mu=0.0, echo=False, batch_size=500):
+def run_method(method, model='mlp', BN=False, num_epochs=50, alpha=0.1, mu=0.9, beta1=0.9, echo=False, batch_size=500):
     X_train, y_train, X_val, y_val, X_test, y_test = load_dataset()
 
     input_var = T.tensor4('inputs')
@@ -118,7 +118,15 @@ def run_sgd_momentum(model='mlp', BN=False, num_epochs=50, alpha=0.1, mu=0.0, ec
                  dtype=theano.config.floatX)
 
     params = lasagne.layers.get_all_params(network, trainable=True)
-    updates = lasagne.updates.momentum(loss, params, learning_rate=alpha, momentum=mu)
+
+    if method == lasagne.updates.sgd:
+        updates = method(loss, params, learning_rate=alpha)
+    elif method == lasagne.updates.momentum:
+        updates = method(loss, params, learning_rate=alpha, momentum=mu)
+    elif method == lasagne.updates.adam:
+        updates = method(loss, params, learning_rate=alpha, beta1=beta1)
+    else:
+        updates = method(loss, params, learning_rate=alpha)
 
     test_prediction = lasagne.layers.get_output(network, deterministic=True)
     test_loss = lasagne.objectives.categorical_crossentropy(test_prediction,
