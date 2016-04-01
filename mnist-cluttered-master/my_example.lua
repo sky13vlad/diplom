@@ -13,8 +13,7 @@ require 'image'
 local dataConfig = {megapatch_w=60, num_dist=4}
 local dataInfo = mnist_cluttered.createData(dataConfig)
 
-
-for epoch = 0,19 do
+for epoch = 0,99 do
 
 	-- print('Epoch '..epoch..'/'..20)
 
@@ -28,4 +27,18 @@ for epoch = 0,19 do
 
 	local formatted = image.toDisplayTensor({input=observation})
 	image.save("clMNIST/example"..tostring(epoch)..".png", formatted)
+	
+	--local y = image.toDisplayTensor({input=target})
+	--image.save("clMNIST/y"..tostring(epoch)..".png", target)
+	local y = torch.totable(target)
+	
+	for i = 1,10 do
+		if y[i] == 1 then
+			local f = io.open("clMNIST/y"..tostring(epoch), "w")
+			f:write(i - 1)
+			f:close()
+			break
+		end
+	end
+
 end
