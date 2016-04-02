@@ -78,8 +78,14 @@ def build_mlp(input_var=None, BN=False):
     if BN:
         l_hid2 = lasagne.layers.batch_norm(l_hid2)
 
+    l_hid3 = lasagne.layers.DenseLayer(
+            l_hid2, num_units=100,
+            nonlinearity=lasagne.nonlinearities.rectify)
+    if BN:
+        l_hid3 = lasagne.layers.batch_norm(l_hid3)
+
     l_out = lasagne.layers.DenseLayer(
-            l_hid2, num_units=10,
+            l_hid3, num_units=10,
             nonlinearity=lasagne.nonlinearities.softmax)
     return l_out
 
@@ -135,7 +141,9 @@ def run_method(method, model='mlp', BN=False, num_epochs=50, alpha=0.1, mu=0.9, 
     test_acc = T.mean(T.eq(T.argmax(test_prediction, axis=1), target_var),
                       dtype=theano.config.floatX)
 
-    train_fn = theano.function([input_var, target_var], [loss, train_acc], updates=updates)
+    train_fn = theano.function([input_var, target_var], loss, updates=updates)
+    train_fn_acc = theano.function([input_var, target_var], train_acc)
+
     val_fn = theano.function([input_var, target_var], [test_loss, test_acc])
 
     if echo:
@@ -154,7 +162,8 @@ def run_method(method, model='mlp', BN=False, num_epochs=50, alpha=0.1, mu=0.9, 
         start_time = time.time()
         for batch in iterate_minibatches(X_train, y_train, batch_size, shuffle=True):
             inputs, targets = batch
-            err, acc = train_fn(inputs, targets)
+            err = train_fn(inputs, targets)
+            acc = train_fn_acc(inputs, targets)
             train_err += err
             train_acc += acc
             train_batches += 1
