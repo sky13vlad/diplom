@@ -109,6 +109,7 @@ def iterate_minibatches(inputs, targets, batchsize, shuffle=False):
             excerpt = slice(start_idx, start_idx + batchsize)
         yield inputs[excerpt], targets[excerpt]
 
+
 def adam_update(loss_or_grads, params, learning_rate=1e-3, beta1=0.9,
                         beta2=0.999, epsilon=1e-8):
     all_grads = lasagne.updates.get_or_compute_grads(loss_or_grads, params)
@@ -221,12 +222,15 @@ def run_method(method, model='mlp', BN=False, num_epochs=50, alpha=0.1, mu=0.9, 
     arr_train_acc = []
     arr_val_acc = []
 
+    v_t = []
+
     for epoch in range(num_epochs):
         train_err = 0
         train_batches = 0
         train_acc = 0
         start_time = time.time()
         for batch in iterate_minibatches(X_train, y_train, batch_size, shuffle=True):
+            global inputs, targets
             inputs, targets = batch
             err = train_fn(inputs, targets)
             acc = train_fn_acc(inputs, targets)
@@ -280,5 +284,6 @@ def run_method(method, model='mlp', BN=False, num_epochs=50, alpha=0.1, mu=0.9, 
     res['val_acc'] = np.array(arr_val_acc)
     res['test_err'] = test_err / test_batches
     res['test_acc'] = test_acc / test_batches * 100
+    res['vt'] = all_vt
 
     return res
