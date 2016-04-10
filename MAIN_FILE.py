@@ -9,7 +9,7 @@ import theano.tensor as T
 import lasagne
 
 
-def load_dataset():
+def load_dataset_mnist():
     # We first define a download function, supporting both Python 2 and 3.
     if sys.version_info[0] == 2:
         from urllib import urlretrieve
@@ -59,35 +59,58 @@ def load_dataset():
     return X_train, y_train, X_val, y_val, X_test, y_test
 
 
-def build_mlp(input_var=None, BN=False):
-    l_in = lasagne.layers.InputLayer(shape=(None, 1, 28, 28),
+def build_mlp(HL, sz, input_var=None, BN=False):
+    l_in = lasagne.layers.InputLayer(shape=(None, 1, sz, sz),
                                      input_var=input_var)
     if BN:
         l_in = lasagne.layers.batch_norm(l_in)
 
-    l_hid1 = lasagne.layers.DenseLayer(
-            l_in, num_units=100,
-            nonlinearity=lasagne.nonlinearities.rectify,
-            W=lasagne.init.GlorotUniform())
-    if BN:
-        l_hid1 = lasagne.layers.batch_norm(l_hid1)
+    l_prev = l_in
 
-    l_hid2 = lasagne.layers.DenseLayer(
-            l_hid1, num_units=100,
-            nonlinearity=lasagne.nonlinearities.rectify)
-    if BN:
-        l_hid2 = lasagne.layers.batch_norm(l_hid2)
-
-    l_hid3 = lasagne.layers.DenseLayer(
-            l_hid2, num_units=100,
-            nonlinearity=lasagne.nonlinearities.rectify)
-    if BN:
-        l_hid3 = lasagne.layers.batch_norm(l_hid3)
+    for i in range(HL):
+        l_hid = lasagne.layers.DenseLayer(
+                l_prev, num_units=100,
+                nonlinearity=lasagne.nonlinearities.rectify,
+                W=lasagne.init.GlorotUniform())
+        if BN:
+            l_hid = lasagne.layers.batch_norm(l_hid)
+        l_prev = l_hid
 
     l_out = lasagne.layers.DenseLayer(
-            l_hid3, num_units=10,
+            l_prev, num_units=10,
             nonlinearity=lasagne.nonlinearities.softmax)
     return l_out
+
+
+def build_cnn(CL, HL, sz, input_var=None, BN=False):
+    network = lasagne.layers.InputLayer(shape=(None, 1, sz, sz),
+                                        input_var=input_var)
+    prev = network
+
+    for i in range(CL):
+        network = lasagne.layers.Conv2DLayer(
+            prev, num_filters=32, filter_size=(5, 5),
+            nonlinearity=lasagne.nonlinearities.rectify,
+            W=lasagne.init.GlorotUniform())
+
+        if BN:
+            network = lasagne.layers.batch_norm(network)
+        network = lasagne.layers.MaxPool2DLayer(network, pool_size=(2, 2))
+        prev = network
+
+    for i in range(HL):
+        network = lasagne.layers.DenseLayer(
+            prev, num_units=256,
+            nonlinearity=lasagne.nonlinearities.rectify)
+        if BN:
+            network = lasagne.layers.batch_norm(network)
+        prev = network
+
+    network = lasagne.layers.DenseLayer(
+        prev, num_units=10,
+        nonlinearity=lasagne.nonlinearities.softmax)
+
+    return network
 
 
 def iterate_minibatches(inputs, targets, batchsize, shuffle=False):
@@ -103,8 +126,12 @@ def iterate_minibatches(inputs, targets, batchsize, shuffle=False):
         yield inputs[excerpt], targets[excerpt]
 
 
-def run_method(method, model='mlp', BN=False, num_epochs=50, alpha=0.1, mu=0.9, beta1=0.9, echo=False, batch_size=500):
-    X_train, y_train, X_val, y_val, X_test, y_test = load_dataset()
+def run_method(method, dataset='MNIST', model='mlp', CL=2, HL=3, BN=False, num_epochs=50, alpha=0.1, mu=0.9,
+               beta1=0.9, beta2=0.999, epsilon=1e-8, echo=False, batch_size=500):
+    sz = 1
+    if dataset == 'MNIST':
+        X_train, y_train, X_val, y_val, X_test, y_test = load_dataset_mnist()
+        sz = 28
 
     input_var = T.tensor4('inputs')
     target_var = T.ivector('targets')
@@ -112,7 +139,9 @@ def run_method(method, model='mlp', BN=False, num_epochs=50, alpha=0.1, mu=0.9, 
     if echo:
         print("Building model and compiling functions...")
     if model == 'mlp':
-        network = build_mlp(input_var, BN)
+        network = build_mlp(HL, sz, input_var, BN)
+    elif model == 'cnn':
+        network = build_cnn(CL, HL, sz, input_var, BN)
     else:
         print("Unrecognized model type %r." % model)
         return
@@ -130,9 +159,9 @@ def run_method(method, model='mlp', BN=False, num_epochs=50, alpha=0.1, mu=0.9, 
     elif method == lasagne.updates.momentum:
         updates = method(loss, params, learning_rate=alpha, momentum=mu)
     elif method == lasagne.updates.adam:
-        updates = method(loss, params, learning_rate=alpha, beta1=beta1)
+        updates = method(loss, params, learning_rate=alpha, beta1=beta1, beta2=beta2, epsilon=epsilon)
     else:
-        updates = method(loss, params, learning_rate=alpha)
+        updates = method(loss, params, learning_rate=alpha, epsilon=epsilon)
 
     test_prediction = lasagne.layers.get_output(network, deterministic=True)
     test_loss = lasagne.objectives.categorical_crossentropy(test_prediction,
@@ -155,6 +184,11 @@ def run_method(method, model='mlp', BN=False, num_epochs=50, alpha=0.1, mu=0.9, 
     arr_train_acc = []
     arr_val_acc = []
 
+    iter_arr_train_err = []
+    iter_arr_val_err = []
+    iter_arr_train_acc = []
+    iter_arr_val_acc = []
+
     for epoch in range(num_epochs):
         train_err = 0
         train_batches = 0
@@ -167,6 +201,8 @@ def run_method(method, model='mlp', BN=False, num_epochs=50, alpha=0.1, mu=0.9, 
             train_err += err
             train_acc += acc
             train_batches += 1
+            iter_arr_train_err.append(train_err / train_batches)
+            iter_arr_train_acc.append(train_acc / train_batches * 100)
 
         arr_train_err.append(train_err / train_batches)
         arr_train_acc.append(train_acc / train_batches * 100)
@@ -180,6 +216,8 @@ def run_method(method, model='mlp', BN=False, num_epochs=50, alpha=0.1, mu=0.9, 
             val_err += err
             val_acc += acc
             val_batches += 1
+            iter_arr_val_err.append(val_err / val_batches)
+            iter_arr_val_acc.append(val_acc / val_batches * 100)
 
         arr_val_err.append(val_err / val_batches)
         arr_val_acc.append(val_acc / val_batches * 100)
@@ -214,5 +252,10 @@ def run_method(method, model='mlp', BN=False, num_epochs=50, alpha=0.1, mu=0.9, 
     res['val_acc'] = np.array(arr_val_acc)
     res['test_err'] = test_err / test_batches
     res['test_acc'] = test_acc / test_batches * 100
+
+    res['iter_train_err'] = np.array(iter_arr_train_err)
+    res['iter_val_err'] = np.array(iter_arr_val_err)
+    res['iter_train_acc'] = np.array(iter_arr_train_acc)
+    res['iter_val_acc'] = np.array(iter_xarr_val_acc)
 
     return res

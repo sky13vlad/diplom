@@ -1,0 +1,54 @@
+\documentclass[12pt,oneside]{article}
+
+\usepackage[russian]{babel}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{graphicx}
+\usepackage{multicol}
+\usepackage[14pt]{extsizes}
+\usepackage[linesnumbered,boxed]{algorithm2e}
+\usepackage{amsthm}
+\usepackage{listings}
+\usepackage{epstopdf}
+
+
+\binoppenalty = 10000
+\relpenalty = 10000
+\textheight = 23cm
+\textwidth = 17cm
+\oddsidemargin = 0pt
+\topmargin = -1.5cm
+\parskip = 0pt
+\tolerance = 2000
+\flushbottom
+
+\pagestyle{myheadings}
+
+\begin{document}
+
+\section{Постановка экспериментов}
+
+\begin{enumerate}
+\item Хотим подтвердить экспериментально, что скачки Адама с батч-нормализацией уменьшаются при увеличении эпсилон, а также сравнить сглаженную версию Адама с батч-нормализацией со стандартной версией Адама. Для этого мы запустим следующие эксперименты на датасете MNIST на трехслойной полносвязной сети:
+\begin{itemize}
+\item BN Adam со стандартным $\epsilon = 10^{-8}$ и сохраним параметры $v_t$ (3 раза)
+\item BN Adam с увеличенным $\epsilon = 10^{-4}$ и сохраним параметры $v_t$ (3 раза)
+\item Adam со стандартным $\epsilon = 10^{-8}$
+\end{itemize}
+
+\item Хотим провести эксперименты с дисперсией градиента и может быть подтвердить, что BN уменьшает дисперсию. Для этого мы запустим $K$ раз SGD и BN SGD на датасете MNIST для 3х- и 10ти-слойной полносвязных сетей из одного начального приближения. На каждой итерации будем записывать угол (или косинус угла) отклонения текущего стохастического шага от полного градиента в текущей точке. Затем усредним все отклонения и проверим, доминирует ли "дисперсия" SGD над "дисперсией" BN SGD.
+
+\item Хотим убедиться, что на трехслойной сети на данных cluttered MNIST метод Адам не успевает обучиться за 50 эпох, для чего мы запустим уже существующий эксперимент на большее количество эпох.
+
+\item Хотим проверить гипотезы об \emph{эпсилон} и \emph{улучшении методов при добавлении BN} для другой архитектуры сети, а именно сверточной (2 сверточных слоя с макс-пулингом, а затем 1 скрытый полносвязный слой). Для этого мы запустим следующие экперименты:
+\begin{itemize}
+\item Все методы с их BN версией на датасете MNIST
+\item Все методы с их BN версией на датасете CIFAR-10
+\item Метод BN Adam с $\epsilon_2 = 10^{-4}$ на обоих датасетах
+\end{itemize}
+
+\end{enumerate}
+
+
+\end{document}
