@@ -256,6 +256,6 @@ def run_method(method, dataset='MNIST', model='mlp', CL=2, HL=3, BN=False, num_e
     res['iter_train_err'] = np.array(iter_arr_train_err)
     res['iter_val_err'] = np.array(iter_arr_val_err)
     res['iter_train_acc'] = np.array(iter_arr_train_acc)
-    res['iter_val_acc'] = np.array(iter_xarr_val_acc)
+    res['iter_val_acc'] = np.array(iter_arr_val_acc)
 
     return res
