@@ -7,7 +7,7 @@ import theano
 import theano.tensor as T
 
 import lasagne
-
+from keras.preprocessing.image import ImageDataGenerator
 
 def load_dataset_mnist():
     # We first define a download function, supporting both Python 2 and 3.
@@ -248,13 +248,23 @@ def run_method(method, dataset='MNIST', model='mlp', CL=2, HL=3, BN=False, num_e
     iter_arr_train_acc = []
     iter_arr_val_acc = []
 
+    datagen = ImageDataGenerator(
+        featurewise_center=False,
+        featurewise_std_normalization=False,
+        rotation_range=30,
+        width_shift_range=0.2,
+        height_shift_range=0.2)
+    datagen.fit(X_train)
+
     for epoch in range(num_epochs):
         train_err = 0
         train_batches = 0
         train_acc = 0
         start_time = time.time()
-        for batch in iterate_minibatches(X_train, y_train, batch_size, shuffle=True):
+
+        for batch in datagen.flow(X_train, y_train, batch_size=batch_size, shuffle=True):
             inputs, targets = batch
+            inputs = np.array(inputs, dtype=np.float32)
             err = train_fn(inputs, targets)
             acc = train_fn_acc(inputs, targets)
             train_err += err
@@ -262,6 +272,8 @@ def run_method(method, dataset='MNIST', model='mlp', CL=2, HL=3, BN=False, num_e
             train_batches += 1
             iter_arr_train_err.append(train_err / train_batches)
             iter_arr_train_acc.append(train_acc / train_batches * 100)
+            if train_batches >= len(X_train) / batch_size:
+                break
 
         arr_train_err.append(train_err / train_batches)
         arr_train_acc.append(train_acc / train_batches * 100)
@@ -286,6 +298,7 @@ def run_method(method, dataset='MNIST', model='mlp', CL=2, HL=3, BN=False, num_e
                 epoch + 1, num_epochs, time.time() - start_time))
             print("  training loss:\t\t{:.6f}".format(train_err / train_batches))
             print("  validation loss:\t\t{:.6f}".format(val_err / val_batches))
+            print("  train accuracy:\t\t{:.2f} %".format(train_acc / train_batches * 100))
             print("  validation accuracy:\t\t{:.2f} %".format(
                 val_acc / val_batches * 100))
 
