@@ -1,0 +1,59 @@
+\documentclass[12pt,oneside]{article}
+
+\usepackage[russian]{babel}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{graphicx}
+\usepackage{multicol}
+\usepackage[14pt]{extsizes}
+\usepackage[linesnumbered,boxed]{algorithm2e}
+\usepackage{amsthm}
+\usepackage{listings}
+\usepackage{epstopdf}
+
+
+\binoppenalty = 10000
+\relpenalty = 10000
+\textheight = 23cm
+\textwidth = 17cm
+\oddsidemargin = 0pt
+\topmargin = -1.5cm
+\parskip = 0pt
+\tolerance = 2000
+\flushbottom
+
+\pagestyle{myheadings}
+
+\begin{document}
+
+
+\begin{table}
+\centering
+\begin{tabular}{|c|c|c|c|c|c|c|c|c|c|c|}\hline
+Номер эпохи & 1 & 2 & 3 & 4 & 5 & 6 & 7 & 8 & 9 & 10 \\\hline
+SGD & 89.15 & 91.87 & 92.84 & 94.05 & 94.33 & 94.97 & 95.6 & 95.81 & 95.99 & 96.14 \\\hline
+BN SGD & 96.42 & 97.27 & 97.38 & 97.63 & 97.5 & 97.74 & 97.72 & 97.91 & 98.0 & 98.07 \\\hline
+Улучшение* & 0.67 & 0.66 & 0.63 & 0.6 & 0.56 & 0.55 & 0.48 & 0.5 & 0.5 & 0.5 \\\hline
+SGDm & 94.86 & 96.45 & 96.66 & 97.0 & 97.07 & 97.29 & 97.39 & 97.6 & 97.48 & 97.28 \\\hline
+BN SGDm & 96.23 & 97.24 & 97.27 & 97.66 & 97.69 & 97.99 & 97.73 & 97.93 & 98.02 & 98.0 \\\hline
+Улучшение* & 0.27 & 0.22 & 0.18 & 0.22 & 0.21 & 0.26 & 0.13 & 0.14 & 0.21 & 0.26 \\\hline
+Adam & 93.47 & 95.48 & 96.03 & 96.55 & 96.74 & 97.22 & 97.18 & 97.17 & 97.43 & 97.41 \\\hline
+BN Adam & 96.38 & 96.88 & 97.38 & 97.47 & 97.65 & 97.64 & 97.53 & 97.56 & 97.55 & 97.79 \\\hline
+Улучшение* & 0.45 & 0.31 & 0.34 & 0.27 & 0.28 & 0.15 & 0.12 & 0.14 & 0.05 & 0.15 \\\hline
+Adagrad & 93.92 & 95.61 & 96.1 & 96.55 & 96.69 & 96.87 & 97.0 & 97.26 & 97.01 & 96.97 \\\hline
+BN Adagrad & 96.01 & 96.98 & 97.16 & 97.5 & 97.52 & 97.72 & 97.62 & 97.63 & 97.79 & 97.75 \\\hline
+Улучшение* & 0.34 & 0.31 & 0.27 & 0.28 & 0.25 & 0.27 & 0.21 & 0.14 & 0.26 & 0.26 \\\hline
+Adadelta & 94.15 & 95.96 & 96.29 & 96.6 & 97.32 & 95.86 & 97.37 & 97.56 & 97.08 & 97.35 \\\hline
+BN Adadelta & 95.64 & 96.55 & 97.04 & 97.26 & 97.17 & 97.58 & 97.59 & 97.45 & 97.67 & 97.64 \\\hline
+Улучшение* & 0.25 & 0.15 & 0.2 & 0.19 & -0.06 & 0.42 & 0.08 & -0.05 & 0.2 & 0.11 \\\hline
+RMSprop & 91.65 & 95.39 & 95.79 & 95.7 & 96.63 & 96.77 & 97.23 & 97.58 & 97.4 & 97.61 \\\hline
+BN RMSprop & 95.07 & 96.97 & 97.07 & 97.31 & 97.35 & 97.61 & 97.8 & 97.61 & 97.86 & 98.04 \\\hline
+Улучшение* & 0.41 & 0.34 & 0.3 & 0.37 & 0.21 & 0.26 & 0.21 & 0.01 & 0.18 & 0.18 \\\hline
+\end{tabular}
+\caption{Качество на MNIST, MLP, лучшие рейты}
+\end{table}
+
+
+
+\end{document}

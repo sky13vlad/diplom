@@ -9,5 +9,5 @@ for i in range(50):
     bn_sgd.append(temp['angle'])
 
 
-with open('bn_sgd_angle', 'wb') as f:
+with open('bn_sgd_angle_batched', 'wb') as f:
     pickle.dump(bn_sgd, f)

@@ -251,10 +251,9 @@ def run_method(method, dataset='MNIST', model='mlp', CL=2, HL=3, BN=False, num_e
     datagen = ImageDataGenerator(
         featurewise_center=False,
         featurewise_std_normalization=False,
-        rotation_range=30,
-        width_shift_range=0.2,
-        height_shift_range=0.2)
-    datagen.fit(X_train)
+        rotation_range=20,
+        width_shift_range=0.1,
+        height_shift_range=0.1)
 
     for epoch in range(num_epochs):
         train_err = 0
@@ -262,9 +261,19 @@ def run_method(method, dataset='MNIST', model='mlp', CL=2, HL=3, BN=False, num_e
         train_acc = 0
         start_time = time.time()
 
-        for batch in datagen.flow(X_train, y_train, batch_size=batch_size, shuffle=True):
+        datagen.fit(X_train)
+
+        for batch in datagen.flow(X_train, y_train, batch_size=len(X_train), shuffle=True):
             inputs, targets = batch
             inputs = np.array(inputs, dtype=np.float32)
+            break
+
+        X_train_new = inputs
+        y_train_new = targets
+
+        for batch in iterate_minibatches(X_train_new, y_train_new, batch_size, shuffle=True):
+            inputs, targets = batch
+            # inputs = np.array(inputs, dtype=np.float32)
             err = train_fn(inputs, targets)
             acc = train_fn_acc(inputs, targets)
             train_err += err
@@ -272,17 +281,19 @@ def run_method(method, dataset='MNIST', model='mlp', CL=2, HL=3, BN=False, num_e
             train_batches += 1
             iter_arr_train_err.append(train_err / train_batches)
             iter_arr_train_acc.append(train_acc / train_batches * 100)
-            if train_batches >= len(X_train) / batch_size:
-                break
+            # if train_batches >= len(X_train) / batch_size:
+            #     break
 
         arr_train_err.append(train_err / train_batches)
         arr_train_acc.append(train_acc / train_batches * 100)
+
 
         val_err = 0
         val_acc = 0
         val_batches = 0
         for batch in iterate_minibatches(X_val, y_val, batch_size, shuffle=False):
             inputs, targets = batch
+            # inputs = np.array(inputs, dtype=np.float32)
             err, acc = val_fn(inputs, targets)
             val_err += err
             val_acc += acc

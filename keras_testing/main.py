@@ -251,7 +251,7 @@ def run_method(method, dataset='MNIST', model='mlp', CL=2, HL=3, BN=False, num_e
     datagen = ImageDataGenerator(
         featurewise_center=False,
         featurewise_std_normalization=False,
-        rotation_range=30,
+        rotation_range=20,
         width_shift_range=0.2,
         height_shift_range=0.2)
     datagen.fit(X_train)

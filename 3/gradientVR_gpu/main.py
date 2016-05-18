@@ -59,59 +59,8 @@ def load_dataset_mnist():
     return X_train, y_train, X_val, y_val, X_test, y_test
 
 
-def load_dataset_cifar10():
-    import pickle
-
-    with open('cifar-10-batches-py/data_batch_1', 'rb') as f:
-        dict1 = pickle.load(f)
-    with open('cifar-10-batches-py/data_batch_2', 'rb') as f:
-        dict2 = pickle.load(f)
-    with open('cifar-10-batches-py/data_batch_3', 'rb') as f:
-        dict3 = pickle.load(f)
-    with open('cifar-10-batches-py/data_batch_4', 'rb') as f:
-        dict4 = pickle.load(f)
-    with open('cifar-10-batches-py/data_batch_5', 'rb') as f:
-        dict5 = pickle.load(f)
-
-    with open('cifar-10-batches-py/test_batch', 'rb') as f:
-        dict_test = pickle.load(f)
-
-    data1 = dict1['data']
-    data2 = dict2['data']
-    data3 = dict3['data']
-    data4 = dict4['data']
-    data5 = dict5['data']
-
-    data_train = np.concatenate((data1, data2, data3, data4, data5), axis=0)
-    data_train = data_train.reshape(-1, 3, 32, 32) / np.float32(256)
-
-    data_test = dict_test['data'].reshape(-1, 3, 32, 32) / np.float32(256)
-
-    labels1 = dict1['labels']
-    labels2 = dict2['labels']
-    labels3 = dict3['labels']
-    labels4 = dict4['labels']
-    labels5 = dict5['labels']
-
-    labels_train = np.concatenate((labels1, labels2, labels3, labels4, labels5), axis=0)
-    labels_train = np.array(labels_train.ravel(), dtype=np.uint8)
-
-    labels_test = np.array(np.ravel(dict_test['labels']), dtype=np.uint8)
-
-    np.random.seed(42)
-    inds = np.arange(len(labels_train))
-    np.random.shuffle(inds)
-
-    X_train, X_val = data_train[inds][:-10000], data_train[inds][-10000:]
-    y_train, y_val = labels_train[inds][:-10000], labels_train[inds][-10000:]
-    X_test = data_test
-    y_test = labels_test
-
-    return X_train, y_train, X_val, y_val, X_test, y_test
-
-
-def build_mlp(HL, sz, input_var=None, BN=False, channels=1):
-    l_in = lasagne.layers.InputLayer(shape=(None, channels, sz, sz),
+def build_mlp(HL, sz, input_var=None, BN=False):
+    l_in = lasagne.layers.InputLayer(shape=(None, 1, sz, sz),
                                      input_var=input_var)
     if BN:
         l_in = lasagne.layers.batch_norm(l_in)
@@ -133,11 +82,9 @@ def build_mlp(HL, sz, input_var=None, BN=False, channels=1):
     return l_out
 
 
-def build_cnn(CL, HL, sz, input_var=None, BN=False, channels=1):
-    network = lasagne.layers.InputLayer(shape=(None, channels, sz, sz),
+def build_cnn(CL, HL, sz, input_var=None, BN=False):
+    network = lasagne.layers.InputLayer(shape=(None, 1, sz, sz),
                                         input_var=input_var)
-    if BN:
-        network = lasagne.layers.batch_norm(network)
     prev = network
 
     for i in range(CL):
@@ -179,18 +126,16 @@ def iterate_minibatches(inputs, targets, batchsize, shuffle=False):
         yield inputs[excerpt], targets[excerpt]
 
 
+def mvec(w):
+    return np.concatenate(map(np.ravel, w))
+
+
 def run_method(method, dataset='MNIST', model='mlp', CL=2, HL=3, BN=False, num_epochs=50, alpha=0.1, mu=0.9,
                beta1=0.9, beta2=0.999, epsilon=1e-8, echo=False, batch_size=500):
     sz = 1
-    channels = 1
     if dataset == 'MNIST':
         X_train, y_train, X_val, y_val, X_test, y_test = load_dataset_mnist()
         sz = 28
-        channels = 1
-    elif dataset == 'CIFAR-10':
-        X_train, y_train, X_val, y_val, X_test, y_test = load_dataset_cifar10()
-        sz = 32
-        channels = 3
 
     input_var = T.tensor4('inputs')
     target_var = T.ivector('targets')
@@ -198,9 +143,9 @@ def run_method(method, dataset='MNIST', model='mlp', CL=2, HL=3, BN=False, num_e
     if echo:
         print("Building model and compiling functions...")
     if model == 'mlp':
-        network = build_mlp(HL, sz, input_var, BN, channels)
+        network = build_mlp(HL, sz, input_var, BN)
     elif model == 'cnn':
-        network = build_cnn(CL, HL, sz, input_var, BN, channels)
+        network = build_cnn(CL, HL, sz, input_var, BN)
     else:
         print("Unrecognized model type %r." % model)
         return
@@ -248,12 +193,35 @@ def run_method(method, dataset='MNIST', model='mlp', CL=2, HL=3, BN=False, num_e
     iter_arr_train_acc = []
     iter_arr_val_acc = []
 
+    arr_angle = []
+    arr_grad = []
+
+    arr_cos = []
+
     for epoch in range(num_epochs):
+        temp_arr_cos = []
         train_err = 0
         train_batches = 0
         train_acc = 0
         start_time = time.time()
+        mind = 0
         for batch in iterate_minibatches(X_train, y_train, batch_size, shuffle=True):
+            if mind % 25 == 0:
+                temp_err = 0
+
+                cur_params = lasagne.layers.get_all_param_values(network)
+                # full_params = np.zeros(mvec(cur_params).shape)
+                # for batch_full in iterate_minibatches(X_train, y_train, batch_size):
+                #     lasagne.layers.set_all_param_values(network, cur_params)
+                #     inputs, targets = batch_full
+                #     temp_err += train_fn(inputs, targets)
+                #     full_params_part = lasagne.layers.get_all_param_values(network)
+                #     full_params += mvec(full_params_part) - mvec(cur_params)
+                # full_params /= len(X_train) / batch_size
+                temp_err = train_fn(X_train, y_train)
+                full_params = lasagne.layers.get_all_param_values(network)
+                lasagne.layers.set_all_param_values(network, cur_params)
+
             inputs, targets = batch
             err = train_fn(inputs, targets)
             acc = train_fn_acc(inputs, targets)
@@ -262,6 +230,31 @@ def run_method(method, dataset='MNIST', model='mlp', CL=2, HL=3, BN=False, num_e
             train_batches += 1
             iter_arr_train_err.append(train_err / train_batches)
             iter_arr_train_acc.append(train_acc / train_batches * 100)
+
+            if mind % 25 == 0:
+                new_params = lasagne.layers.get_all_param_values(network)
+                # x = full_params
+
+                s = map(str, lasagne.layers.get_all_params(network))
+                s = np.array(s)
+                ind = np.where(s == 'W')[0]
+
+                cur_params = [cur_params[i] for i in ind]
+                full_params = [full_params[i] for i in ind]
+                new_params = [new_params[i] for i in ind]
+
+                x = mvec(full_params) - mvec(cur_params)
+                y = mvec(new_params) - mvec(cur_params)
+                td = x.dot(y) / (np.linalg.norm(x) * np.linalg.norm(y))
+                if abs(np.linalg.norm(x)) < 1e-8 or abs(np.linalg.norm(y)) < 1e-8:
+                    td = 1.0
+                temp_arr_cos.append(td)
+                # print("cos: " + str(td))
+                angle = np.arccos(td)
+                arr_angle.append(angle)
+                arr_grad.append(y)
+            mind += 1
+        arr_cos.append(temp_arr_cos)
 
         arr_train_err.append(train_err / train_batches)
         arr_train_acc.append(train_acc / train_batches * 100)
@@ -316,5 +309,10 @@ def run_method(method, dataset='MNIST', model='mlp', CL=2, HL=3, BN=False, num_e
     res['iter_val_err'] = np.array(iter_arr_val_err)
     res['iter_train_acc'] = np.array(iter_arr_train_acc)
     res['iter_val_acc'] = np.array(iter_arr_val_acc)
+
+    res['angle'] = arr_angle
+    res['grads'] = arr_grad
+
+    res['cos'] = arr_cos
 
     return res

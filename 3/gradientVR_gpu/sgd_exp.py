@@ -10,5 +10,5 @@ for i in range(50):
     temp = main.run_method(lasagne.updates.sgd, num_epochs=50)
     sgd.append(temp['angle'])
 
-with open('sgd_angle', 'wb') as f:
+with open('sgd_angle_batched', 'wb') as f:
     pickle.dump(sgd, f)

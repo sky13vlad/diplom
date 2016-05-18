@@ -1,0 +1,62 @@
+\documentclass[12pt,oneside]{article}
+
+\usepackage[russian]{babel}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{graphicx}
+\usepackage{multicol}
+\usepackage[14pt]{extsizes}
+\usepackage[linesnumbered,boxed]{algorithm2e}
+\usepackage{amsthm}
+\usepackage{listings}
+\usepackage{epstopdf}
+
+
+\binoppenalty = 10000
+\relpenalty = 10000
+\textheight = 23cm
+\textwidth = 17cm
+\oddsidemargin = 0pt
+\topmargin = -1.5cm
+\parskip = 0pt
+\tolerance = 2000
+\flushbottom
+
+\pagestyle{myheadings}
+
+\begin{document}
+
+\begin{table}
+\centering
+\begin{tabular}{|c|c|c|c|c|c|}\hline
+Номер эпохи & 1 & 2 & 5 & 20 & 50 \\\hline
+SGD & 22.45 & 19.11 & 39.46 & 52.61 & 63.83 \\\hline
+BN SGD & 44.68 & 48.45 & 58.47 & 66.22 & 72.34 \\\hline
+Улучшение* & 0.29 & 0.36 & 0.31 & 0.29 & 0.24 \\\hline
+Adam & 39.75 & 45.0 & 51.96 & 61.73 & 68.27 \\\hline
+BN Adam & 51.7 & 57.85 & 63.91 & 72.81 & 75.59 \\\hline
+Улучшение* & 0.2 & 0.23 & 0.25 & 0.29 & 0.23 \\\hline
+\end{tabular}
+\caption{Качество на CIFAR-10, CNN, одинаковые рейты}
+\end{table}
+
+\begin{table}
+\centering
+\begin{tabular}{|c|c|c|c|c|c|}\hline
+Номер эпохи & 1 & 2 & 5 & 20 & 50 \\\hline
+SGD & 21.42 & 31.61 & 34.39 & 41.62 & 43.56 \\\hline
+BN SGD & 38.6 & 41.04 & 45.11 & 50.19 & 53.0 \\\hline
+Улучшение* & 0.22 & 0.14 & 0.16 & 0.15 & 0.17 \\\hline
+SGDm & 30.86 & 32.48 & 38.34 & 43.02 & 49.16 \\\hline
+BN SGDm & 37.38 & 41.15 & 44.53 & 50.05 & 52.88 \\\hline
+Улучшение* & 0.09 & 0.13 & 0.1 & 0.12 & 0.07 \\\hline
+Adam & 31.41 & 34.48 & 39.5 & 43.93 & 49.07 \\\hline
+BN Adam & 39.47 & 43.43 & 46.72 & 51.89 & 53.91 \\\hline
+Улучшение* & 0.12 & 0.14 & 0.12 & 0.14 & 0.1 \\\hline
+\end{tabular}
+\caption{Качество на CIFAR-10, MLP, одинаковые рейты}
+\end{table}
+
+
+\end{document}
